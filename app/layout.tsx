@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, JetBrains_Mono, Unbounded } from "next/font/google";
+import { Inter, JetBrains_Mono, Unbounded } from "next/font/google";
 import "./globals.css";
 
 const heading = Unbounded({
@@ -7,7 +7,7 @@ const heading = Unbounded({
   subsets: ["latin"],
 });
 
-const body = Geist({
+const body = Inter({
   variable: "--font-body",
   subsets: ["latin"],
 });
@@ -32,11 +32,7 @@ export default function RootLayout({
       <body
         className={`${body.variable} ${heading.variable} ${mono.variable} antialiased`}
       >
-        <div className="flex min-h-screen items-center justify-center">
-          <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 sm:items-start">
-            {children}
-          </main>
-        </div>
+        {children}
       </body>
     </html>
   );
