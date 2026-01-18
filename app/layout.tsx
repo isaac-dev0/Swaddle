@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Unbounded } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/providers/AuthProvider";
 
 const heading = Unbounded({
   variable: "--font-heading",
@@ -32,7 +33,7 @@ export default function RootLayout({
       <body
         className={`${body.variable} ${heading.variable} ${mono.variable} antialiased`}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
