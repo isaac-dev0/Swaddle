@@ -8,61 +8,84 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { sendOtp, verifyOtp } from "@/lib/auth/auth";
+
+const OtpSchema = z.object({
+  otp: z
+    .string()
+    .length(6, { message: "Please enter all 6 digits." })
+    .regex(/^\d+$/, { message: "Code must contain only numbers." }),
+});
+
+export type OtpFormValues = z.infer<typeof OtpSchema>;
 
 export interface AuthOtpFormProps {
   email: string;
   onBack: () => void;
-  onResend: () => Promise<void>;
+  onSuccess?: () => void;
 }
 
-export function AuthOtpForm() {
-  const [otp, setOtp] = React.useState<string>("");
-  const [email, setEmail] = React.useState<string>("");
+export function AuthOtpForm({ email, onBack, onSuccess }: AuthOtpFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [isResending, setIsResending] = React.useState<boolean>(false);
 
-  async function handleSendOtp(
-    event: React.FormEvent,
-    email: string
-  ): Promise<void> {
-    event.preventDefault();
+  const form = useForm<OtpFormValues>({
+    resolver: zodResolver(OtpSchema),
+    defaultValues: {
+      otp: "",
+    },
+  });
+
+  async function handleVerifyOtp(code: string): Promise<void> {
+    form.clearErrors();
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      await sendOtp(email);
-    } catch (error) {
-      console.error(error);
+      await verifyOtp(email, code);
+      onSuccess?.();
+    } catch (err) {
+      form.setError("otp", {
+        message: err instanceof Error ? err.message : "Invalid code",
+      });
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function handleVerifyOtp(email: string, otp: string) {
+  async function handleResend(): Promise<void> {
+    form.clearErrors();
+    setIsResending(true);
     try {
-      setIsLoading(true);
-      await verifyOtp(email, otp);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleResend(email: string): Promise<void> {
-    try {
-      setIsResending(true);
-      setIsLoading(true);
       await sendOtp(email);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      form.setError("otp", {
+        message: err instanceof Error ? err.message : "Failed to resend code",
+      });
     } finally {
       setIsResending(false);
-      setIsLoading(false);
     }
+  }
+
+  async function onSubmit(values: OtpFormValues) {
+    await handleVerifyOtp(values.otp);
+  }
+
+  function handleComplete(code: string) {
+    form.setValue("otp", code);
+    handleVerifyOtp(code);
   }
 
   return (
-    <>
+    <div className="space-y-6">
       <button
         type="button"
         onClick={onBack}
@@ -70,63 +93,76 @@ export function AuthOtpForm() {
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back
+        Use a different email
       </button>
 
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
-          We sent a verification code to
+          We sent a verification code to {""}
+          <span className="text-sm font-medium text-foreground">{email}</span>
         </p>
-        <p className="text-sm font-medium text-foreground">{email}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="flex justify-center">
-          <InputOTP
-            maxLength={6}
-            value={otp}
-            onChange={setOtp}
-            onComplete={handleComplete}
-            disabled={isLoading}
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
-        </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="otp"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onComplete={handleComplete}
+                      disabled={isLoading}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                </FormControl>
+                <FormMessage className="text-center" />
+              </FormItem>
+            )}
+          />
 
-        <Button
-          type="submit"
-          disabled={isLoading || otp.length !== 6}
-          className="w-full h-11 font-normal rounded-md"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Verifying...
-            </>
-          ) : (
-            "Verify code"
-          )}
-        </Button>
-      </form>
+          <Button
+            type="submit"
+            disabled={isLoading || form.watch("otp").length !== 6}
+            className="w-full h-11 font-normal rounded-md"
+          >
+            {isLoading && !isResending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              "Verify Code"
+            )}
+          </Button>
+        </form>
+      </Form>
 
       <p className="text-xs text-muted-foreground text-center">
         Didn't receive the code?{" "}
         <button
           type="button"
-          onClick={onResend}
+          onClick={handleResend}
           disabled={isResending || isLoading}
           className="underline hover:text-foreground transition-colors disabled:opacity-50"
         >
           {isResending ? "Sending..." : "Resend code"}
         </button>
       </p>
-    </>
+    </div>
   );
 }

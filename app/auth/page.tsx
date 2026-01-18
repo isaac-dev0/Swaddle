@@ -9,7 +9,6 @@ import {
   BentoItemDescription,
   BentoItemBackground,
 } from "@/components/ui/bento-grid";
-import { sendOtp, verifyOtp } from "@/lib/auth/auth";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
@@ -18,15 +17,8 @@ export default function Login() {
   return (
     <div className="flex min-h-screen bg-background">
       <AuthCard
-        onSendOtp={async (email) => {
-          await sendOtp(email);
-        }}
-        onVerifyOtp={async (email, otp) => {
-          await verifyOtp(email, otp);
+        onSuccess={() => {
           router.push("/dashboard");
-        }}
-        onResendOtp={async (email) => {
-          await sendOtp(email);
         }}
       />
 

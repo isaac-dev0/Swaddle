@@ -78,17 +78,17 @@ export function AuthEmailForm({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Sending code...
+                Sending...
               </>
             ) : (
-              "Continue with email"
+              "Send Code"
             )}
           </Button>
         </form>
       </Form>
 
       <p className="text-xs text-muted-foreground text-center">
-        By signing up, you agree to our{" "}
+        By using this service, you agree to our{" "}
         <a
           href={termsUrl}
           className="underline hover:text-foreground transition-colors"

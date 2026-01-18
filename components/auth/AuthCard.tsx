@@ -4,6 +4,7 @@ import * as React from "react";
 import { Birdhouse } from "lucide-react";
 import { AuthEmailForm } from "./AuthEmailForm";
 import { AuthOtpForm } from "./AuthOtpForm";
+import { sendOtp } from "@/lib/auth/auth";
 
 type AuthStep = "email" | "otp";
 
@@ -14,9 +15,7 @@ export interface AuthCardProps {
   subheading?: string;
   otpHeading?: string;
   otpSubheading?: string;
-  onSendOtp: (email: string) => Promise<void>;
-  onVerifyOtp: (email: string, otp: string) => Promise<void>;
-  onResendOtp: (email: string) => Promise<void>;
+  onSuccess?: () => void;
   termsUrl?: string;
   privacyUrl?: string;
   supportUrl?: string;
@@ -29,9 +28,7 @@ export function AuthCard({
   subheading = "Welcome, let's get started by entering your email below.",
   otpHeading = "Keep an eye out for a verification code.",
   otpSubheading = "Enter the 6-digit code we sent to verify your identity.",
-  onSendOtp,
-  onVerifyOtp,
-  onResendOtp,
+  onSuccess,
   termsUrl = "#",
   privacyUrl = "#",
   supportUrl = "#",
@@ -39,7 +36,6 @@ export function AuthCard({
   const [step, setStep] = React.useState<AuthStep>("email");
   const [email, setEmail] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [isResending, setIsResending] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
 
   async function handleEmailSubmit(submittedEmail: string) {
@@ -47,39 +43,13 @@ export function AuthCard({
     setIsLoading(true);
 
     try {
-      await onSendOtp(submittedEmail);
+      await sendOtp(submittedEmail);
       setEmail(submittedEmail);
       setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send code");
     } finally {
       setIsLoading(false);
-    }
-  }
-
-  async function handleOtpSubmit(otp: string) {
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      await onVerifyOtp(email, otp);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid code");
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleResendOtp() {
-    setError(null);
-    setIsResending(true);
-
-    try {
-      await onResendOtp(email);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to resend code");
-    } finally {
-      setIsResending(false);
     }
   }
 
@@ -110,6 +80,11 @@ export function AuthCard({
           </p>
         </div>
 
+        {/* Error display */}
+        {error && (
+          <p className="text-sm text-destructive text-center">{error}</p>
+        )}
+
         {/* Forms */}
         {step === "email" ? (
           <AuthEmailForm
@@ -121,11 +96,8 @@ export function AuthCard({
         ) : (
           <AuthOtpForm
             email={email}
-            onSubmit={handleOtpSubmit}
             onBack={handleBack}
-            onResend={handleResendOtp}
-            isLoading={isLoading}
-            isResending={isResending}
+            onSuccess={onSuccess}
           />
         )}
       </div>
