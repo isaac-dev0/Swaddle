@@ -48,6 +48,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith(path),
   );
   const isAuthPath = authPaths.some((path) => pathname.startsWith(path));
+  const isRootPath = pathname === "/";
 
   /* If the user is trying to access a protected path, re-route to /auth */
   if (isProtectedPath && !user) {
@@ -56,8 +57,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  /* Redirect root path based on auth status */
+  if (isRootPath) {
+    const url = request.nextUrl.clone();
+    if (!user) {
+      url.pathname = "/auth";
+      return NextResponse.redirect(url);
+    }
+  }
+
   /* Re-route the user depending on role and onboarding status. */
-  if ((isAuthPath || isProtectedPath) && user) {
+  if ((isAuthPath || isProtectedPath || isRootPath) && user) {
     const { data: profile } = await supabase
       .from("users")
       .select("role, is_onboarded")
