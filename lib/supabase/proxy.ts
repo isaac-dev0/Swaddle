@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { Role } from "@/lib/enums/role.enum";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -38,16 +39,47 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  const { pathname } = request.nextUrl;
+
+  const protectedPaths = ["/professional", "/volunteer", "/onboard"];
+  const authPaths = ["/auth"];
+
+  const isProtectedPath = protectedPaths.some((path) =>
+    pathname.startsWith(path),
+  );
+  const isAuthPath = authPaths.some((path) => pathname.startsWith(path));
+
+  /* If the user is trying to access a protected path, re-route to /auth */
+  if (isProtectedPath && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = "/auth";
     return NextResponse.redirect(url);
+  }
+
+  /* Re-route the user depending on role and onboarding status. */
+  if ((isAuthPath || isProtectedPath) && user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role, is_onboarded")
+      .eq("id", user.sub)
+      .single();
+
+    let routePath: string;
+    if (!profile) {
+      routePath = "/onboard";
+    } else if (profile.role === Role.PROFESSIONAL) {
+      routePath = profile.is_onboarded ? "/professional" : "/onboard";
+    } else {
+      routePath = "/volunteer";
+    }
+
+    const shouldRedirect = isAuthPath || !pathname.startsWith(routePath);
+
+    if (shouldRedirect) {
+      const url = request.nextUrl.clone();
+      url.pathname = routePath;
+      return NextResponse.redirect(url);
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

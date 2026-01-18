@@ -11,6 +11,7 @@ export type User = {
   role: Role;
   is_active?: boolean;
   last_login?: Date;
+  is_onboarded: boolean;
   created_at?: Date;
   updated_at?: Date;
 };
