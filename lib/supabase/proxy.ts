@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const protectedPaths = ["/professional", "/volunteer", "/onboard"];
+  const protectedPaths = ["/professional", "/volunteer", "/onboarding"];
   const authPaths = ["/auth"];
 
   const isProtectedPath = protectedPaths.some((path) =>
@@ -76,9 +76,9 @@ export async function updateSession(request: NextRequest) {
 
     let routePath: string;
     if (!profile) {
-      routePath = "/onboard";
+      routePath = "/onboarding";
     } else if (profile.role === Role.PROFESSIONAL) {
-      routePath = profile.is_onboarded ? "/professional" : "/onboard";
+      routePath = profile.is_onboarded ? "/professional" : "/onboarding";
     } else {
       routePath = "/volunteer";
     }
