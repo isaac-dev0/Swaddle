@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Unbounded } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/providers/AuthProvider";
+import { AuthProvider } from "@/lib/providers/AuthProvider";
 
 const heading = Unbounded({
   variable: "--font-heading",
