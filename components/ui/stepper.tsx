@@ -268,14 +268,14 @@ function Stepper(props: StepperProps) {
       getState: () => stateRef.current,
       setState: (key, value) => {
         if (Object.is(stateRef.current[key], value)) return;
- 
+
         if (key === "value" && typeof value === "string") {
           stateRef.current.value = value;
           propsRef.current.onValueChange?.(value);
         } else {
           stateRef.current[key] = value;
         }
- 
+
         store.notify();
       },
       setStateWithValidation: async (value, direction) => {
@@ -283,14 +283,15 @@ function Stepper(props: StepperProps) {
           store.setState("value", value);
           return true;
         }
- 
+
         try {
           const isValid = await propsRef.current.onValidate(value, direction);
           if (isValid) {
             store.setState("value", value);
           }
           return isValid;
-        } catch {
+        } catch (error) {
+          console.error("Validation error", error);
           return false;
         }
       },
@@ -352,7 +353,7 @@ function Stepper(props: StepperProps) {
   );
  
   const RootPrimitive = asChild ? Slot : "div";
- 
+
   return (
     <StoreContext.Provider value={store}>
       <StepperContext.Provider value={contextValue}>
@@ -368,7 +369,9 @@ function Stepper(props: StepperProps) {
             orientation === "horizontal" ? "w-full flex-col" : "flex-row",
             className,
           )}
-        />
+        >
+          {rootProps.children}
+        </RootPrimitive>
       </StepperContext.Provider>
     </StoreContext.Provider>
   );
@@ -624,7 +627,7 @@ function StepperItem(props: StepperItemProps) {
  
   useIsomorphicLayoutEffect(() => {
     store.addStep(itemValue, completed, disabled);
- 
+
     return () => {
       store.removeStep(itemValue);
     };
@@ -1184,20 +1187,28 @@ function StepperPrev(props: ButtonProps) {
   const stepKeys = Array.from(steps.keys());
   const currentIndex = value ? stepKeys.indexOf(value) : -1;
   const isDisabled = disabled || currentIndex <= 0;
- 
+
   const onClick = React.useCallback(
     async (event: React.MouseEvent<HTMLButtonElement>) => {
       propsRef.current.onClick?.(event);
-      if (event.defaultPrevented || isDisabled) return;
- 
-      const prevIndex = Math.max(currentIndex - 1, 0);
-      const prevStepValue = stepKeys[prevIndex];
- 
+      if (event.defaultPrevented) return;
+
+      // Read fresh values from store instead of closure
+      const currentState = store.getState();
+      const currentSteps = Array.from(currentState.steps.keys());
+      const currentValue = currentState.value;
+      const currentIdx = currentValue ? currentSteps.indexOf(currentValue) : -1;
+
+      if (disabled || currentIdx <= 0) return;
+
+      const prevIndex = Math.max(currentIdx - 1, 0);
+      const prevStepValue = currentSteps[prevIndex];
+
       if (prevStepValue) {
         store.setState("value", prevStepValue);
       }
     },
-    [propsRef, isDisabled, currentIndex, stepKeys, store],
+    [propsRef, disabled, store],
   );
  
   const PrevPrimitive = asChild ? Slot : "button";
@@ -1226,21 +1237,31 @@ function StepperNext(props: ButtonProps) {
  
   const stepKeys = Array.from(steps.keys());
   const currentIndex = value ? stepKeys.indexOf(value) : -1;
-  const isDisabled = disabled || currentIndex >= stepKeys.length - 1;
- 
+  const isDisabled = disabled || (stepKeys.length > 0 && currentIndex >= stepKeys.length - 1);
+
   const onClick = React.useCallback(
     async (event: React.MouseEvent<HTMLButtonElement>) => {
       propsRef.current.onClick?.(event);
-      if (event.defaultPrevented || isDisabled) return;
- 
-      const nextIndex = Math.min(currentIndex + 1, stepKeys.length - 1);
-      const nextStepValue = stepKeys[nextIndex];
- 
+      if (event.defaultPrevented) return;
+
+      // Read fresh values from store instead of closure
+      const currentState = store.getState();
+      const currentSteps = Array.from(currentState.steps.keys());
+      const currentValue = currentState.value;
+      const currentIdx = currentValue ? currentSteps.indexOf(currentValue) : -1;
+
+      if (disabled || (currentSteps.length > 0 && currentIdx >= currentSteps.length - 1)) {
+        return;
+      }
+
+      const nextIndex = Math.min(currentIdx + 1, currentSteps.length - 1);
+      const nextStepValue = currentSteps[nextIndex];
+
       if (nextStepValue) {
         await store.setStateWithValidation(nextStepValue, "next");
       }
     },
-    [propsRef, isDisabled, currentIndex, stepKeys, store],
+    [propsRef, disabled, store],
   );
  
   const NextPrimitive = asChild ? Slot : "button";
