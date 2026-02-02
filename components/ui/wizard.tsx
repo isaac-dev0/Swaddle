@@ -19,6 +19,7 @@ import {
   StepperTitle,
   StepperTrigger,
 } from "@/components/ui/stepper";
+import { Separator } from "./separator";
 
 // Types
 export interface WizardStep {
@@ -108,7 +109,7 @@ function MobileProgressDots({
   completedSteps,
 }: MobileProgressDotsProps) {
   return (
-    <div className="flex items-center justify-center gap-1.5">
+    <div className="flex items-center justify-center gap-2">
       {steps.map((step) => {
         const isCurrent = step.value === currentStepValue;
         const isCompleted = completedSteps.has(step.value);
@@ -117,8 +118,8 @@ function MobileProgressDots({
           <div
             key={step.value}
             className={cn(
-              "size-2 rounded-full transition-all duration-200",
-              isCurrent && "bg-primary scale-125",
+              "h-1 w-6 rounded-full transition-all duration-200",
+              isCurrent && "bg-primary",
               isCompleted && !isCurrent && "bg-primary/60",
               !isCompleted && !isCurrent && "bg-muted-foreground/30"
             )}
@@ -151,15 +152,13 @@ function MobileStepHeader({
   currentStepValue,
 }: MobileStepHeaderProps) {
   return (
-    <div className="mb-6 flex flex-col gap-3 md:hidden">
-      {/* Step Counter */}
+    <div className="flex flex-col gap-4 md:hidden">
       <div className="text-center text-muted-foreground text-sm">
         Step {currentStepIndex + 1} of {totalSteps}
       </div>
 
-      {/* Current Step Title */}
       <div className="text-center">
-        <h2 className="font-semibold text-lg">{currentStepTitle}</h2>
+        <h2 className="font-semibold text-xl font-heading mb-1">{currentStepTitle}</h2>
         {currentStepDescription && (
           <p className="text-muted-foreground text-sm">
             {currentStepDescription}
@@ -167,12 +166,12 @@ function MobileStepHeader({
         )}
       </div>
 
-      {/* Progress Dots */}
       <MobileProgressDots
         steps={steps}
         currentStepValue={currentStepValue}
         completedSteps={completedSteps}
       />
+      <Separator className="mt-8" />
     </div>
   );
 }
@@ -207,7 +206,6 @@ export function Wizard(props: WizardProps) {
 
   const stepHandlers = React.useRef<Map<string, StepHandler>>(new Map());
 
-  // Sync controlled value
   React.useEffect(() => {
     if (value !== undefined) {
       setCurrentStep(value);
@@ -423,8 +421,11 @@ export function Wizard(props: WizardProps) {
           );
         })}
 
-        {/* Navigation Controls */}
-        <div className="mt-4 flex items-center justify-between">
+        {/* Spacer to prevent content from being hidden behind fixed navigation */}
+        <div className="h-24" />
+
+        {/* Navigation Controls - Fixed to bottom */}
+        <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between border-t bg-background px-4 py-4 md:px-6">
           <StepperPrev asChild>
             <Button variant="outline" className="group" disabled={stepIndex === 0}>
               <ArrowLeft className="size-4 mr-2 group-hover:-translate-x-0.5 transition-transform" />

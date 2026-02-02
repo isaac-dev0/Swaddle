@@ -13,27 +13,22 @@ const steps = [
   {
     value: "welcome",
     title: "Welcome",
-    description: "Learn a bit about the system",
   },
   {
     value: "about",
-    title: "Professional Details",
-    description: "Tell us more about yourself",
+    title: "Details",
   },
   {
     value: "process",
-    title: "Our Workflow",
-    description: "Understanding our workflow",
+    title: "Workflow",
   },
   {
     value: "guidelines",
-    title: "Our Guidelines",
-    description: "Understanding our guidelines",
+    title: "Guidelines",
   },
   {
     value: "start",
     title: "Getting Started",
-    description: "Let's get started",
   },
 ];
 

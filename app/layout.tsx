@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Unbounded } from "next/font/google";
+import { DM_Sans, Inter, JetBrains_Mono, Unbounded } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/providers/AuthProvider";
 
@@ -8,7 +8,7 @@ const heading = Unbounded({
   subsets: ["latin"],
 });
 
-const body = Inter({
+const body = DM_Sans({
   variable: "--font-body",
   subsets: ["latin"],
 });
